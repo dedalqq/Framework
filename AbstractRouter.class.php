@@ -9,6 +9,9 @@ abstract class AbstractRouter {
     }
 
     public function getRequestUrl() {
+        if (!isset($_SERVER['REDIRECT_URL'])) {
+            return '';
+        }
         return $_SERVER['REDIRECT_URL'];
     }
 
