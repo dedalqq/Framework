@@ -3,6 +3,7 @@
 namespace Framework;
 
 use Framework\Exceptions\FatalException;
+use Framework\Exceptions\Router;
 use Framework\MySQL\ActiveRecord;
 use Framework\MySQL\Connection;
 
@@ -17,6 +18,11 @@ abstract class AbstractApp {
 
     private $cur_time = null;
 
+    /** @var \stdClass */
+    private $settings = null;
+
+    private $project_domain = null;
+
     /**
      * @var self
      */
@@ -26,15 +32,62 @@ abstract class AbstractApp {
 
     }
 
+    protected function initApp() {
+
+        return true;
+    }
+
+    public function getProjectDomain() {
+        return $this->project_domain;
+    }
+
+    /**
+     * @param $name
+     * @return null|string
+     */
+    public function getCookieValue($name) {
+        if (isset($_COOKIE[$name])) {
+            return (string)$_COOKIE[$name];
+        }
+        return null;
+    }
+
     /**
      *
      */
     public function run() {
         try {
-            $this->getRouter()->getController()->run();
+
+            $this->initApp();
+
+            $method = $this->getRouter()->getMethod();
+
+            if (empty($method)) {
+                throw new Router('Bad request!');
+            }
+
+            $controller = $this->getRouter()->getController();
+
+            if (is_null($controller)) {
+                throw new Router('Bad request!');
+            }
+
+            if ($controller->beforeAction()) {
+                $controller->$method();
+            }
+            else {
+                throw new Router('Bad request!');
+            }
         }
         catch (FatalException $exception) {
+            echo '<pre>';
             var_dump($exception);
+            echo '</pre>';
+        }
+        catch (Router $exception) {
+            echo '<pre>';
+            var_dump($exception);
+            echo '</pre>';
         }
     }
 
@@ -61,12 +114,11 @@ abstract class AbstractApp {
         return self::$instance;
     }
 
-    protected function init() {
+    private function init() {
 
         $this->cur_time = time();
 
-        $settings_file_name = $this->getSettingsFileName();
-        $settings = $this->getSettings($settings_file_name);
+        $settings = $this->getSettings();
 
         $this->db_connection = new Connection($this);
 
@@ -83,7 +135,9 @@ abstract class AbstractApp {
 
         ActiveRecord::setDbConnection($this->db_connection);
 
-        $this->project_folder = $settings->project_folder;
+        $this->project_folder = $settings->project_path;
+
+        $this->project_domain = $settings->project_domain;
     }
 
     public function time() {
@@ -113,12 +167,15 @@ abstract class AbstractApp {
 
     /**
      * Возвращает настройки взятые из файла
-     * @param $config_file
      * @return \stdClass
      */
-    protected  function getSettings($config_file) {
-        $content = file_get_contents($config_file);
-        return json_decode($content);
+    public function getSettings() {
+        if (is_null($this->settings)) {
+            $settings_file_name = $this->getSettingsFileName();
+            $content = file_get_contents($settings_file_name);
+            $this->settings = json_decode($content);
+        }
+        return $this->settings;
     }
 
 }

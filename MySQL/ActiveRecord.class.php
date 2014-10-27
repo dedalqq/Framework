@@ -49,6 +49,9 @@ abstract class ActiveRecord {
         }
     }
 
+    /**
+     * @return static
+     */
     public static function model() {
 
         if (is_null(self::$model)) {
@@ -60,6 +63,8 @@ abstract class ActiveRecord {
     }
 
     public function __set($name, $value) {
+
+        $property = $this->getProperties();
 
         if (!isset($property[$name])) {
             return null;
@@ -142,15 +147,15 @@ abstract class ActiveRecord {
 
         $result = self::model()->query($query);
 
-        if ($result->isSuccess()) {
-            /** @var self $model */
-            $model = new static();
-            $model->setData($result->fetch());
-            $model->is_new = false;
-            return $model;
+        if ($result->isEmpty()) {
+            return null;
         }
 
-        return null;
+        /** @var self $model */
+        $model = new static();
+        $model->setData($result->fetch());
+        $model->is_new = false;
+        return $model;
 
     }
 
@@ -172,7 +177,7 @@ abstract class ActiveRecord {
     }
 
     /**
-     * @return MysqlResult
+     * @return Result
      */
     public function save() {
 

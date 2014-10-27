@@ -3,7 +3,8 @@
 namespace Framework\MySQL;
 
 use Framework\AbstractApp;
-use Framework\Exceptions\FatalException;
+use Framework\Exceptions\Fatal as FatalException;
+use Framework\Exceptions\MySQL;
 
 class Connection
 {
@@ -106,7 +107,8 @@ class Connection
     /**
      * @param QueryBuilder $query
      * @throws FatalException
-     * @return MySQLResult|null
+     * @throws MySQL
+     * @return Result|null
      */
     public function query(QueryBuilder $query)
     {
@@ -114,12 +116,16 @@ class Connection
 
         $result = $this->connection->query($query->get());
 
-        if (is_bool($result) && $result) {
-            return new MySQLResult(true, null);
+        if ($result === false) {
+            throw new MySQL($this->connection->error);
         }
 
-        if ($result) {
-            return new MySQLResult(true, $result);
+        if ($result === true) {
+            return new Result(true, null);
+        }
+
+        if ($result instanceof \mysqli_result) {
+            return new Result(true, $result);
         }
 
         throw new FatalException('MySQL server Error');

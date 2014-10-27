@@ -2,7 +2,7 @@
 
 namespace Framework\MySQL;
 
-class MySQLResult {
+class Result {
 
     /**
      * @var bool
@@ -17,6 +17,10 @@ class MySQLResult {
     public function __construct($is_success, \mysqli_result $result = null) {
         $this->is_success = $is_success;
         $this->result = $result;
+    }
+
+    public function isEmpty() {
+        return $this->result->num_rows == 0;
     }
 
     public function fetchAll() {

@@ -2,6 +2,8 @@
 
 namespace Framework\MySQL;
 
+use Framework\Exceptions\FatalException;
+
 class QueryBuilder {
 
     const SELECT = 1;
@@ -89,7 +91,15 @@ class QueryBuilder {
     }
 
     private function escape($value) {
-        return $value;
+        if (is_int($value)) {
+            return $value;
+        }
+        elseif (is_string($value)) {
+            return '\''.addslashes($value).'\'';
+        }
+        else {
+            throw new FatalException('Bad value on QBuilder');
+        }
     }
 
     public function setWhere(array $where) {
@@ -114,6 +124,14 @@ class QueryBuilder {
         return $this->table_prefix.$this->table_name;
     }
 
+    private function getData($data) {
+        $data_value = array();
+        foreach($data as $name => $value) {
+            $data_value[] = $name.'='.$this->escape($value);
+        }
+        return join(', ', $data_value);
+    }
+
     /**
      * @return string
      */
@@ -125,14 +143,15 @@ class QueryBuilder {
             case self::SELECT:
 
                 $select = $this->getSelectSection($this->select_fields);
-
                 $query = 'SELECT '.$select.' FROM '.$table_name;
                 $query.= $this->getWhereString($this->where);
                 return $query;
 
             case self::INSERT:
 
-                return '';
+                $query = 'INSERT INTO '.$table_name.' SET '.$this->getData($this->data);
+                return $query;
+
             case self::UPDATE:
 
                 return '';

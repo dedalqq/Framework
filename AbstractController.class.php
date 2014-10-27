@@ -4,6 +4,8 @@ namespace Framework;
 
 abstract class AbstractController {
 
-    abstract function run();
+    public function beforeAction() {
+        return true;
+    }
 
 }
