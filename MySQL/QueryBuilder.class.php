@@ -38,6 +38,12 @@ class QueryBuilder {
         return $builder;
     }
 
+    public static function Update($table) {
+        $builder = new self($table);
+        $builder->query_type = self::UPDATE;
+        return $builder;
+    }
+
     public static function Insert($table) {
         $builder = new self($table);
         $builder->query_type = self::INSERT;
@@ -154,7 +160,10 @@ class QueryBuilder {
 
             case self::UPDATE:
 
-                return '';
+                $query = 'UPDATE '.$table_name.' SET '.$this->getData($this->data);
+                $query.= $this->getWhereString($this->where);
+                return $query;
+
             case self::SHOW_TABLES:
                 return 'SHOW TABLES;';
             case self::DROP:

@@ -2,7 +2,7 @@
 
 namespace Framework;
 
-use Framework\Exceptions\FatalException;
+use Framework\Exceptions\Fatal as FatalException;
 use Framework\Exceptions\Router;
 use Framework\MySQL\ActiveRecord;
 use Framework\MySQL\Connection;
@@ -60,13 +60,12 @@ abstract class AbstractApp {
 
             $this->initApp();
 
+            $controller = $this->getRouter()->getController();
             $method = $this->getRouter()->getMethod();
 
             if (empty($method)) {
                 throw new Router('Bad request!');
             }
-
-            $controller = $this->getRouter()->getController();
 
             if (is_null($controller)) {
                 throw new Router('Bad request!');
@@ -75,9 +74,7 @@ abstract class AbstractApp {
             if ($controller->beforeAction()) {
                 $controller->$method();
             }
-            else {
-                throw new Router('Bad request!');
-            }
+
         }
         catch (FatalException $exception) {
             echo '<pre>';

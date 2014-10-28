@@ -2,7 +2,7 @@
 
 namespace Framework\MySQL;
 
-use Framework\Exceptions\FatalException;
+use Framework\Exceptions\Fatal as FatalException;
 
 abstract class ActiveRecord {
 
@@ -43,7 +43,7 @@ abstract class ActiveRecord {
         self::$db_connection = $db_connection;
     }
 
-    private function __construct() {
+    public function __construct() {
         if (is_null(self::$db_connection)) {
             throw new FatalException('Connection is not set!');
         }
@@ -189,8 +189,10 @@ abstract class ActiveRecord {
             $query = QueryBuilder::Insert($this->getTableName())->setData($this->data);
         }
         else {
-            $query = QueryBuilder::Insert($this->getTableName())->setData($this->data);
-            $query->setWhere($this->getPk(), $this->data[$this->getPk()]);
+            $query = QueryBuilder::Update($this->getTableName())->setData($this->data);
+            $pk_name = $this->getPk();
+            $pk_value = $this->data[$this->getPk()];
+            $query->setWhere(array($pk_name => $pk_value));
         }
 
         return $this->query($query);
