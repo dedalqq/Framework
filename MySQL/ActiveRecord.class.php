@@ -4,13 +4,17 @@ namespace Framework\MySQL;
 
 use Framework\Exceptions\Fatal as FatalException;
 
-abstract class ActiveRecord {
+abstract class ActiveRecord
+{
 
     const TYPE_INT = 1;
 
     const TYPE_STRING = 2;
 
     const TYPE_ARRAY = 3;
+
+    /** @var Result */
+    private $result = null;
 
     private $data = array();
 
@@ -39,30 +43,41 @@ abstract class ActiveRecord {
     /**
      * @param Connection $db_connection
      */
-    public static function setDbConnection(Connection $db_connection) {
+    public static function setDbConnection(Connection $db_connection)
+    {
         self::$db_connection = $db_connection;
     }
 
-    public function __construct() {
+    public function __construct()
+    {
         if (is_null(self::$db_connection)) {
             throw new FatalException('Connection is not set!');
         }
     }
 
+    public function getData()
+    {
+        return $this->data;
+    }
+
     /**
      * @return static
      */
-    public static function model() {
+    public static function model()
+    {
 
-        if (is_null(self::$model)) {
-            self::$model = new static();
-        }
+        return new static();
 
-        return self::$model;
+//        if (is_null(self::$model)) {
+//            self::$model = new static();
+//        }
+//
+//        return self::$model;
 
     }
 
-    public function __set($name, $value) {
+    public function setValue($name, $value)
+    {
 
         $property = $this->getProperties();
 
@@ -75,7 +90,13 @@ abstract class ActiveRecord {
         return null;
     }
 
-    function __get($name) {
+    public function __set($name, $value)
+    {
+        return $this->setValue($name, $value);
+    }
+
+    function __get($name)
+    {
 
         if (isset($this->data[$name])) {
             return $this->data[$name];
@@ -84,28 +105,29 @@ abstract class ActiveRecord {
         return null;
     }
 
-    protected function getPk() {
+    protected function getPk()
+    {
         return 'id';
     }
 
-    public function escapeValue($name, $value) {
+    public function escapeValue($name, $value)
+    {
 
         $property = $this->getProperties();
 
         if ($property[$name] == self::TYPE_INT) {
             return (int)$value;
-        }
-        elseif ($property[$name] == self::TYPE_STRING) {
+        } elseif ($property[$name] == self::TYPE_STRING) {
             return (string)$value;
-        }
-        elseif ($property[$name] == self::TYPE_ARRAY) {
+        } elseif ($property[$name] == self::TYPE_ARRAY) {
             // @todo
         }
 
         return null;
     }
 
-    public function setData(array $data) {
+    public function setData(array $data)
+    {
 
         foreach ($this->getProperties() as $name => $value) {
 
@@ -122,7 +144,8 @@ abstract class ActiveRecord {
      * @param array $data
      * @return bool|int
      */
-    public static function insert(array $data) {
+    public static function insert(array $data)
+    {
         /** @var self $model */
         $model = new static();
         $model->setData($data);
@@ -139,7 +162,8 @@ abstract class ActiveRecord {
      * @param array $parameters
      * @return static|null
      */
-    public static function find(array $parameters = array()) {
+    public static function find(array $parameters = array())
+    {
 
         $table_name = self::model()->getTableName();
 
@@ -153,33 +177,52 @@ abstract class ActiveRecord {
 
         /** @var self $model */
         $model = new static();
-        $model->setData($result->fetch());
+        $model->result = $result;
+        $model->fetch();
         $model->is_new = false;
         return $model;
 
     }
 
-    public static function count(array $parameters = array()) {
+    public function fetch()
+    {
+        $data = $this->result->fetch();
+
+        if (empty($data)) {
+            return false;
+        }
+
+        $this->setData($data);
+
+        return true;
+    }
+
+    public static function count(array $parameters = array())
+    {
         // @todo
     }
 
-    public static function getById($id) {
+    public static function getById($id)
+    {
         // @todo
     }
 
-    public static function getByProperty(array $property) {
+    public static function getByProperty(array $property)
+    {
         // @todo
         return null;
     }
 
-    public function load($id) {
+    public function load($id)
+    {
         // @todo
     }
 
     /**
      * @return Result
      */
-    public function save() {
+    public function save()
+    {
 
         if (empty($this->data)) {
             return false;
@@ -187,8 +230,7 @@ abstract class ActiveRecord {
 
         if ($this->is_new) {
             $query = QueryBuilder::Insert($this->getTableName())->setData($this->data);
-        }
-        else {
+        } else {
             $query = QueryBuilder::Update($this->getTableName())->setData($this->data);
             $pk_name = $this->getPk();
             $pk_value = $this->data[$this->getPk()];
@@ -198,7 +240,8 @@ abstract class ActiveRecord {
         return $this->query($query);
     }
 
-    public function query($query) {
+    public function query($query)
+    {
         return self::$db_connection->query($query);
     }
 
