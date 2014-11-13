@@ -3,7 +3,8 @@
 namespace Framework;
 
 use Framework\Exceptions\Fatal as FatalException;
-use Framework\Exceptions\Router;
+use Framework\Exceptions\Router as RouterException;
+use Framework\Exceptions\MySQL as MySQLException;
 use Framework\MySQL\ActiveRecord;
 use Framework\MySQL\Connection;
 
@@ -81,7 +82,12 @@ abstract class AbstractApp {
             var_dump($exception);
             echo '</pre>';
         }
-        catch (Router $exception) {
+        catch (RouterException $exception) {
+            echo '<pre>';
+            var_dump($exception);
+            echo '</pre>';
+        }
+        catch (MySQLException $exception) {
             echo '<pre>';
             var_dump($exception);
             echo '</pre>';
@@ -169,7 +175,7 @@ abstract class AbstractApp {
     public function getSettings() {
         if (is_null($this->settings)) {
             $settings_file_name = $this->getSettingsFileName();
-            $content = file_get_contents($settings_file_name);
+            $content = file_get_contents(__DIR__.'/../'.$settings_file_name);
             $this->settings = json_decode($content);
         }
         return $this->settings;

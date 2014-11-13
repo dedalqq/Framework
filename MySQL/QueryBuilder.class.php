@@ -2,7 +2,7 @@
 
 namespace Framework\MySQL;
 
-use Framework\Exceptions\FatalException;
+use Framework\Exceptions\Fatal as FatalException;
 
 class QueryBuilder {
 
@@ -119,8 +119,16 @@ class QueryBuilder {
         }
 
         $where_properties = array();
-        foreach ($where as $name => $value) {
-            $where_properties[] = $name.'='.$this->escape($value);
+        foreach ($where as $name => $data_value) {
+            if (is_array($data_value)) {
+                $math = $data_value[0];
+                $value = $data_value[1];
+            }
+            else {
+                $math = '=';
+                $value = $data_value;
+            }
+            $where_properties[] = '`'.$name.'`'.$math.$this->escape($value);
         }
 
         return ' WHERE '.join(' AND ', $where_properties);
@@ -133,7 +141,7 @@ class QueryBuilder {
     private function getData($data) {
         $data_value = array();
         foreach($data as $name => $value) {
-            $data_value[] = $name.'='.$this->escape($value);
+            $data_value[] = '`'.$name.'`'.'='.$this->escape($value);
         }
         return join(', ', $data_value);
     }

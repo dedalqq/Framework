@@ -160,9 +160,10 @@ abstract class ActiveRecord
 
     /**
      * @param array $parameters
+     * @param $fetch
      * @return static|null
      */
-    public static function find(array $parameters = array())
+    private static function findModel(array $parameters = array(), $fetch)
     {
 
         $table_name = self::model()->getTableName();
@@ -178,10 +179,32 @@ abstract class ActiveRecord
         /** @var self $model */
         $model = new static();
         $model->result = $result;
-        $model->fetch();
+
+        if ($fetch) {
+            $model->fetch();
+        }
+
         $model->is_new = false;
         return $model;
 
+    }
+
+    /**
+     * @param array $parameters
+     * @return static|null
+     */
+    public static function find(array $parameters = array())
+    {
+        return self::findModel($parameters, true);
+    }
+
+    /**
+     * @param array $parameters
+     * @return static
+     */
+    public static function findAll(array $parameters = array())
+    {
+        return self::findModel($parameters, false);
     }
 
     public function fetch()
@@ -240,7 +263,13 @@ abstract class ActiveRecord
         return $this->query($query);
     }
 
-    public function query($query)
+    /**
+     * @param QueryBuilder $query
+     * @return Result|null
+     * @throws FatalException
+     * @throws \Framework\Exceptions\MySQL
+     */
+    public function query(QueryBuilder $query)
     {
         return self::$db_connection->query($query);
     }
