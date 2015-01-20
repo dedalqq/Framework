@@ -93,10 +93,22 @@ class QueryBuilder {
             return '*';
         }
 
-        return '`'.join('`, `', $select_fields).'`';
+        $fields = array();
+
+        foreach ($select_fields as $key => $value) {
+            if (is_string($key)) {
+                $fields[] = $value.' as `'.$key.'`'; // todo
+            }
+            else {
+                $fields[] = '`'.$value.'`';
+            }
+        }
+
+        return join(', ', $fields);
     }
 
     private function escape($value) {
+
         if (is_int($value)) {
             return $value;
         }

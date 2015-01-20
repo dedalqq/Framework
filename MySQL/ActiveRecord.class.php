@@ -13,9 +13,6 @@ abstract class ActiveRecord
 
     const TYPE_ARRAY = 3;
 
-    /** @var Result */
-    private $result = null;
-
     private $data = array();
 
     private $is_new = true;
@@ -24,11 +21,6 @@ abstract class ActiveRecord
      * @var Connection
      */
     private static $db_connection = null;
-
-    /**
-     * @var static
-     */
-    private static $model = null;
 
     /**
      * @return string
@@ -65,15 +57,7 @@ abstract class ActiveRecord
      */
     public static function model()
     {
-
         return new static();
-
-//        if (is_null(self::$model)) {
-//            self::$model = new static();
-//        }
-//
-//        return self::$model;
-
     }
 
     public function setValue($name, $value)
@@ -110,6 +94,14 @@ abstract class ActiveRecord
         return 'id';
     }
 
+    public function getPkValue()
+    {
+        if (isset($this->data[$this->getPk()])) {
+            return $this->data[$this->getPk()];
+        }
+        return null;
+    }
+
     public function escapeValue($name, $value)
     {
 
@@ -120,7 +112,7 @@ abstract class ActiveRecord
         } elseif ($property[$name] == self::TYPE_STRING) {
             return (string)$value;
         } elseif ($property[$name] == self::TYPE_ARRAY) {
-            // @todo
+            // @todo vse nado vsem
         }
 
         return null;
@@ -160,10 +152,9 @@ abstract class ActiveRecord
 
     /**
      * @param array $parameters
-     * @param $fetch
      * @return static|null
      */
-    private static function findModel(array $parameters = array(), $fetch)
+    public static function find(array $parameters = array())
     {
 
         $table_name = self::model()->getTableName();
@@ -176,13 +167,16 @@ abstract class ActiveRecord
             return null;
         }
 
+        $data = $result->fetch();
+
+        if (empty($data)) {
+            return null;
+        }
+
         /** @var self $model */
         $model = new static();
-        $model->result = $result;
 
-        if ($fetch) {
-            $model->fetch();
-        }
+        $model->setData($data);
 
         $model->is_new = false;
         return $model;
@@ -191,54 +185,38 @@ abstract class ActiveRecord
 
     /**
      * @param array $parameters
-     * @return static|null
-     */
-    public static function find(array $parameters = array())
-    {
-        return self::findModel($parameters, true);
-    }
-
-    /**
-     * @param array $parameters
-     * @return static
+     * @return ActiveRecordIterator
      */
     public static function findAll(array $parameters = array())
     {
-        return self::findModel($parameters, false);
-    }
+        $table_name = self::model()->getTableName();
 
-    public function fetch()
-    {
-        $data = $this->result->fetch();
+        $query = QueryBuilder::Select($table_name)->setWhere($parameters);
 
-        if (empty($data)) {
-            return false;
+        $result = self::model()->query($query);
+
+        if ($result->isEmpty()) {
+            return null;
         }
 
-        $this->setData($data);
-
-        return true;
+        return new ActiveRecordIterator($result, self::model());
     }
+
 
     public static function count(array $parameters = array())
     {
-        // @todo
+        $table_name = self::model()->getTableName();
+        $query = QueryBuilder::Select($table_name)->setWhere($parameters);
+        $query->setSelectFields(array('count' => 'COUNT(*)'));
+        $result = self::model()->query($query);
+        $data = $result->fetch();
+        return (int)$data['count'];
     }
 
     public static function getById($id)
     {
-        // @todo
-    }
-
-    public static function getByProperty(array $property)
-    {
-        // @todo
-        return null;
-    }
-
-    public function load($id)
-    {
-        // @todo
+        $parameters = array('id' => $id);
+        return self::find($parameters);
     }
 
     /**

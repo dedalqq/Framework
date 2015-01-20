@@ -48,4 +48,11 @@ class Result {
         return (bool)$this->is_success;
     }
 
+    public function rewind() {
+        $this->result->data_seek(0);
+    }
+
+    public function count() {
+        return $this->result->num_rows;
+    }
 }

@@ -8,4 +8,6 @@ abstract class AbstractController {
         return true;
     }
 
+    abstract public function actionIndex();
+
 }

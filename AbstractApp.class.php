@@ -7,6 +7,7 @@ use Framework\Exceptions\Router as RouterException;
 use Framework\Exceptions\MySQL as MySQLException;
 use Framework\MySQL\ActiveRecord;
 use Framework\MySQL\Connection;
+use tpl\page404;
 
 abstract class AbstractApp {
 
@@ -53,6 +54,8 @@ abstract class AbstractApp {
         return null;
     }
 
+    abstract protected function initMainPage();
+
     /**
      *
      */
@@ -61,19 +64,28 @@ abstract class AbstractApp {
 
             $this->initApp();
 
+            if (!Request::getInt('ajax')) {
+                $this->initMainPage();
+                exit;
+            }
+
             $controller = $this->getRouter()->getController();
             $method = $this->getRouter()->getMethod();
 
             if (empty($method)) {
-                throw new Router('Bad request!');
+                throw new RouterException('Bad request!');
             }
 
             if (is_null($controller)) {
-                throw new Router('Bad request!');
+                throw new RouterException('Bad request!');
             }
 
             if ($controller->beforeAction()) {
                 $controller->$method();
+            }
+            else {
+                $page_404 = new page404();
+                echo $page_404;
             }
 
         }
