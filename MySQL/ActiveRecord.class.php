@@ -195,9 +195,9 @@ abstract class ActiveRecord
 
         $result = self::model()->query($query);
 
-        if ($result->isEmpty()) {
-            return null;
-        }
+//        if ($result->isEmpty()) {
+//            return null;
+//        }
 
         return new ActiveRecordIterator($result, self::model());
     }
@@ -219,6 +219,15 @@ abstract class ActiveRecord
         return self::find($parameters);
     }
 
+    public function delete()
+    {
+        $query = QueryBuilder::Delete($this->getTableName());
+        $pk_name = $this->getPk();
+        $pk_value = $this->data[$this->getPk()];
+        $query->setWhere(array($pk_name => $pk_value));
+        return $this->query($query);
+    }
+
     /**
      * @return Result
      */
@@ -231,6 +240,8 @@ abstract class ActiveRecord
 
         if ($this->is_new) {
             $query = QueryBuilder::Insert($this->getTableName())->setData($this->data);
+            $this->is_new = false;
+            $this->data[$this->getPk()] = self::$db_connection->getLastId(); // todo печалька =( не работет =(
         } else {
             $query = QueryBuilder::Update($this->getTableName())->setData($this->data);
             $pk_name = $this->getPk();
@@ -250,6 +261,10 @@ abstract class ActiveRecord
     public function query(QueryBuilder $query)
     {
         return self::$db_connection->query($query);
+    }
+
+    public function isNew() {
+        return $this->is_new;
     }
 
 }
