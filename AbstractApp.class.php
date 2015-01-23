@@ -7,7 +7,7 @@ use Framework\Exceptions\Router as RouterException;
 use Framework\Exceptions\MySQL as MySQLException;
 use Framework\MySQL\ActiveRecord;
 use Framework\MySQL\Connection;
-use tpl\page404;
+use Tpl\page404;
 
 abstract class AbstractApp {
 
