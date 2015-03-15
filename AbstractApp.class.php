@@ -5,11 +5,14 @@ namespace Framework;
 use Framework\Exceptions\Fatal as FatalException;
 use Framework\Exceptions\Router as RouterException;
 use Framework\Exceptions\MySQL as MySQLException;
+use Framework\Mongo\AbstractModel;
+use Framework\Mongo\Connection as MongoConnection;
 use Framework\MySQL\ActiveRecord;
 use Framework\MySQL\Connection;
-use Tpl\page404;
+use tpl\page404;
 
-abstract class AbstractApp {
+abstract class AbstractApp
+{
 
     private $project_folder = null;
 
@@ -30,16 +33,22 @@ abstract class AbstractApp {
      */
     private static $instance = null;
 
-    private function __construct() {
+    private function __construct()
+    {
 
     }
 
-    protected function initApp() {
+    protected function initApp()
+    {
 
         return true;
     }
 
-    public function getProjectDomain() {
+    public function getProjectDomain()
+    {
+        if (empty($this->project_domain)) {
+            return $_SERVER['HTTP_HOST'];
+        }
         return $this->project_domain;
     }
 
@@ -47,7 +56,8 @@ abstract class AbstractApp {
      * @param $name
      * @return null|string
      */
-    public function getCookieValue($name) {
+    public function getCookieValue($name)
+    {
         if (isset($_COOKIE[$name])) {
             return (string)$_COOKIE[$name];
         }
@@ -59,14 +69,15 @@ abstract class AbstractApp {
     /**
      *
      */
-    public function run() {
+    public function run()
+    {
         try {
 
             $this->initApp();
 
             if (!Request::getInt('ajax')) {
                 $this->initMainPage();
-                exit;
+                return null;
             }
 
             $controller = $this->getRouter()->getController();
@@ -83,23 +94,16 @@ abstract class AbstractApp {
             if ($controller->beforeAction()) {
                 $controller->$method();
             }
-            else {
-                $page_404 = new page404();
-                echo $page_404;
-            }
 
-        }
-        catch (FatalException $exception) {
+        } catch (FatalException $exception) {
             echo '<pre>';
             var_dump($exception);
             echo '</pre>';
-        }
-        catch (RouterException $exception) {
+        } catch (RouterException $exception) {
             echo '<pre>';
             var_dump($exception);
             echo '</pre>';
-        }
-        catch (MySQLException $exception) {
+        } catch (MySQLException $exception) {
             echo '<pre>';
             var_dump($exception);
             echo '</pre>';
@@ -119,7 +123,8 @@ abstract class AbstractApp {
     /**
      * @return static
      */
-    public static function i() {
+    public static function i()
+    {
 
         if (is_null(self::$instance)) {
             self::$instance = new static();
@@ -129,65 +134,83 @@ abstract class AbstractApp {
         return self::$instance;
     }
 
-    private function init() {
+    private function init()
+    {
 
         $this->cur_time = time();
 
         $settings = $this->getSettings();
 
-        $this->db_connection = new Connection($this);
+        if (isset($settings->mysql)) {
 
-        $db_settings = $settings->data_base;
+            $db_settings = $settings->mysql;
 
-        $this->db_connection->connect(
-            $db_settings->host,
-            $db_settings->login,
-            $db_settings->password,
-            $db_settings->db_name,
-            $db_settings->port,
-            $db_settings->table_prefix
-        );
+            $this->db_connection = new Connection($this);
 
-        ActiveRecord::setDbConnection($this->db_connection);
+            $this->db_connection->connect(
+                $db_settings->host,
+                $db_settings->login,
+                $db_settings->password,
+                $db_settings->db_name,
+                $db_settings->port,
+                $db_settings->table_prefix
+            );
+
+            ActiveRecord::setDbConnection($this->db_connection);
+        }
+
+        if (isset($settings->mongo)) {
+
+            $db_settings = $settings->mongo;
+
+            $mongo_connection = new MongoConnection($db_settings->host, $db_settings->db_name);
+            AbstractModel::setConnection($mongo_connection);
+
+        }
 
         $this->project_folder = $settings->project_path;
 
         $this->project_domain = $settings->project_domain;
     }
 
-    public function time() {
+    public function time()
+    {
         return $this->cur_time;
     }
 
     /**
      * @return Connection
      */
-    public function getDBConnection() {
+    public function getDBConnection()
+    {
         return $this->db_connection;
     }
 
     /**
      * @return AbstractRouter
      */
-    public function getRouter() {
+    public function getRouter()
+    {
         if (is_null($this->router)) {
             $this->router = $this->initRouter();
         }
         return $this->router;
     }
 
-    public function getContents($file_name) {
-        return file_get_contents($this->project_folder.'/'.$file_name);
+    public function getContents($file_name)
+    {
+        return file_get_contents($this->project_folder . '/' . $file_name);
     }
 
     /**
      * Возвращает настройки взятые из файла
      * @return \stdClass
      */
-    public function getSettings() {
+    public function getSettings()
+    {
         if (is_null($this->settings)) {
             $settings_file_name = $this->getSettingsFileName();
-            $content = file_get_contents(__DIR__.'/../'.$settings_file_name);
+            $content = file_get_contents(__DIR__ . '/../' . $settings_file_name);
             $this->settings = json_decode($content);
         }
         return $this->settings;
