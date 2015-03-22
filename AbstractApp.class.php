@@ -52,6 +52,11 @@ abstract class AbstractApp
         return $this->project_domain;
     }
 
+    public function getProjectFolder()
+    {
+        return $this->project_folder;
+    }
+
     /**
      * @param $name
      * @return null|string

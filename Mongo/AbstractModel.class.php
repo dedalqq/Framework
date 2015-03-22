@@ -40,6 +40,16 @@ abstract class AbstractModel {
         return null;
     }
 
+    public function setData(array $data)
+    {
+        $this->data = $data;
+    }
+
+    public function setRefId(\MongoId $ref_id)
+    {
+        $this->ref_id = $ref_id;
+    }
+
     public function setValue($name, $value)
     {
 
@@ -64,7 +74,7 @@ abstract class AbstractModel {
         } elseif ($property[$name] == self::TYPE_STRING) {
             return (string)$value;
         } elseif ($property[$name] == self::TYPE_ARRAY) {
-            // @todo vse nado vsem
+            return (array)$value;
         }
 
         return null;
@@ -96,7 +106,8 @@ abstract class AbstractModel {
      * @param array $property
      * @return static
      */
-    public static function find(array $property = array()) {
+    public static function find(array $property = array())
+    {
         $collection = self::model()->getCollection();
         $data = $collection->findOne($property);
 
@@ -110,8 +121,16 @@ abstract class AbstractModel {
         return $object;
     }
 
-    public static function findAll(array $property = array()) {
+    public static function findAll(array $property = array())
+    {
+        $collection = self::model()->getCollection();
+        $result = $collection->find($property);
 
+        if (is_null($result)) {
+            return null;
+        }
+
+        return new Iterator($result, self::model());
     }
 
     public function save() {
