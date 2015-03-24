@@ -11,6 +11,8 @@ abstract class AbstractModel {
 
     const TYPE_ARRAY = 3;
 
+    const TYPE_OBJECT = 4;
+
     private $data = array();
 
     /** @var null|\MongoId */
@@ -75,6 +77,11 @@ abstract class AbstractModel {
             return (string)$value;
         } elseif ($property[$name] == self::TYPE_ARRAY) {
             return (array)$value;
+        } elseif (
+            $property[$name] == self::TYPE_OBJECT
+            && $value instanceof self
+        ) {
+            return $value->ref_id;
         }
 
         return null;
@@ -151,4 +158,7 @@ abstract class AbstractModel {
         return false;
     }
 
+    public function delete() {
+
+    }
 }
