@@ -11,8 +11,6 @@ abstract class AbstractModel {
 
     const TYPE_ARRAY = 3;
 
-    const TYPE_OBJECT = 4;
-
     private $data = array();
 
     /** @var null|\MongoId */
@@ -34,8 +32,21 @@ abstract class AbstractModel {
 
     function __get($name)
     {
-
         if (isset($this->data[$name])) {
+
+            $property = $this->getProperties();
+            if ($property[$name] instanceof self) {
+
+                /** @var $object self */
+                $object = clone $property[$name];
+                $data = $object->getCollection()->findOne(array('_id' => $this->data[$name]['$id']));
+                if (is_null($data)) {
+                    return null;
+                }
+                $object->data = $data;
+                return $object;
+            }
+
             return $this->data[$name];
         }
 
@@ -68,20 +79,23 @@ abstract class AbstractModel {
 
     public function escapeValue($name, $value)
     {
-
         $property = $this->getProperties();
 
-        if ($property[$name] == self::TYPE_INT) {
+        if (
+            $property[$name] instanceof self
+            && get_class($property[$name]) == get_class($value)
+        ) {
+            /** @var $value self */
+            if (empty($value->ref_id)) {
+                $value->save();
+            }
+            return \MongoDBRef::create($value->getCollectionName(), $value->ref_id);
+        } elseif ($property[$name] == self::TYPE_INT) {
             return (int)$value;
         } elseif ($property[$name] == self::TYPE_STRING) {
             return (string)$value;
         } elseif ($property[$name] == self::TYPE_ARRAY) {
             return (array)$value;
-        } elseif (
-            $property[$name] == self::TYPE_OBJECT
-            && $value instanceof self
-        ) {
-            return $value->ref_id;
         }
 
         return null;
