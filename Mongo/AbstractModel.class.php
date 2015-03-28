@@ -3,7 +3,8 @@
 namespace Framework\Mongo;
 
 
-abstract class AbstractModel {
+abstract class AbstractModel
+{
 
     const TYPE_INT = 1;
 
@@ -104,7 +105,8 @@ abstract class AbstractModel {
     /**
      * @param Connection $connection
      */
-    public static function setConnection(Connection $connection) {
+    public static function setConnection(Connection $connection)
+    {
         self::$connection = $connection;
     }
 
@@ -119,7 +121,8 @@ abstract class AbstractModel {
     /**
      * @return \MongoCollection
      */
-    private function getCollection() {
+    protected function getCollection()
+    {
         return self::$connection->getDataBase()->selectCollection($this->getCollectionName());
     }
 
@@ -154,16 +157,15 @@ abstract class AbstractModel {
         return new Iterator($result, self::model());
     }
 
-    public function save() {
-
+    public function save()
+    {
         $collection = $this->getCollection();
 
         try {
             $collection->save($this->data);
             $this->ref_id = $this->data['_id'];
             return true;
-        }
-        catch (\MongoException $exception) {
+        } catch (\MongoException $exception) {
             echo '<pre>';
             var_dump($exception);
             echo '</pre>';
@@ -172,7 +174,14 @@ abstract class AbstractModel {
         return false;
     }
 
-    public function delete() {
+    public function update(array $data = array())
+    {
+        $collection = $this->getCollection();
+        return $collection->update(array('_id' => $this->ref_id), $data);
+    }
 
+    public function delete()
+    {
+        $this->getCollection()->remove(array('_id' => $this->ref_id));
     }
 }
