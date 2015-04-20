@@ -53,6 +53,10 @@ class Connection
 
     }
 
+    public function setCharset($value = 'utf8') {
+        $this->connection->set_charset($value);
+    }
+
     public function isConnectTrue()
     {
         // @todo сделать по нормальному

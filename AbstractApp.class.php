@@ -173,9 +173,19 @@ abstract class AbstractApp
 
         }
 
-        $this->project_folder = $settings->project_path;
+        if (empty($settings->project_path)) {
+            $this->project_folder = __DIR__;
+        }
+        else {
+            $this->project_folder = $settings->project_path;
+        }
 
-        $this->project_domain = $settings->project_domain;
+        if (empty($settings->project_domain)) {
+            $this->project_domain = 'localhost';
+        }
+        else {
+            $this->project_domain = $settings->project_domain;
+        }
     }
 
     public function time()
